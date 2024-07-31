@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "kernel_tool.h": "c",
+        "sockop.h": "c"
+    }
+}

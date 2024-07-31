@@ -23,7 +23,7 @@ void elevator1_device_output(ElevatorState* Ele)
 
         /* read state */
         mode = Ele->state;
-        floor = Ele->loc;
+        floor = Ele->location;
 
         /* update */
         dev_state[1] = '1';
@@ -93,7 +93,7 @@ void elevator2_device_output(ElevatorState* Ele)
 
         /* read state */
         mode = Ele->state;
-        floor = Ele->loc;
+        floor = Ele->location;
 
         /* update */
         dev_state[7] = '1';

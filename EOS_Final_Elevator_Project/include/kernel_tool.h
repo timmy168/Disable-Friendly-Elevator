@@ -1,5 +1,5 @@
-#ifndef KERTOOL
-#define KERTOOL
+#ifndef KERNELTOOL
+#define KERNELTOOL
 
 #include <stdlib.h>
 #include <sys/ipc.h>
@@ -18,14 +18,27 @@
 
 #define SEM_MODE 0666
 
-SharedData *shared_data;
+SharedResource *shared_resource;
 
+// Accquire Semaphore
 int P (int s);
+
+// Release Semaphore
 int V (int s);
-Demand** create_shm(int* shmid);
-bitmap* create_shm_Bit();
+
+// create shared memory of passenger's requirement
+Requirement** create_shm(int* shmid);
+
+// create a bit map that contains passenger's imformation
+bitmap* create_shm_Bit(int* shmid);
+
+// create a share memory of elevator's state
 ElevatorState* create_shm_Ele(int* shmid, key_t key_bitmap, unsigned short id);
+
+//create semaphore
 int create_semaphore(int* sem, int key);
-SharedData* create_mutex_lock(int shm_fd);
+
+//create mutex lock
+SharedResource* create_mutex_lock(int shm_fd);
 
 #endif

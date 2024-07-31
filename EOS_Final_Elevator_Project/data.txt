@@ -1,0 +1,10 @@
+name Andy type 0 time 0 loc 3 des 6 direc up
+name Frank type 0 time 0 loc 8 des 4 direc down
+name Widden type 0 time 0 loc 2 des 8 direc up
+name Matt type 0 time 2 loc 4 des 9 direc up
+name Leo type 0 time 2 type 0 loc 9 des 6 direc down
+name Jason type 0 time 4 loc 7 des 1 direc down
+name Petter type 0 time 4 loc 5 des 6 direc up
+name Henry type 0 time 4 loc 2 des 9 direc up
+name Bob type 0 time 7 loc 3 des 2 direc down
+name Alice type 0 time 7 loc 1 des 6 direc up

@@ -24,7 +24,7 @@ int shmid[32], Bitmap_id, timer_id, shm_fd, user_id;
 int controller_pid;
 pid_t childpid1;
 
-Demand *shm_data[32];
+Requirement *shm_data[32];
 bitmap *shm_bitmap;
 
 typedef struct
@@ -65,6 +65,7 @@ void timer_handler(int signum)
 {
     ++(*timer_count);
 }
+
 void timer()
 {
     struct sigaction sa;
@@ -77,10 +78,9 @@ void timer()
     timer.it_interval.tv_sec = 1;
     timer.it_interval.tv_usec = 0;
     setitimer (ITIMER_VIRTUAL, &timer, NULL);
-
 }
 
-int read_txt(Demand *data, int index, char data_name[])
+int read_txt(Requirement *data, int index, char data_name[])
 {
     FILE *file = fopen(data_name, "r");
     char buffer[100], *tok;
@@ -92,19 +92,24 @@ int read_txt(Demand *data, int index, char data_name[])
         strcpy(user_info->name[index], tok);
         tok = strtok(NULL, " ");
         tok = strtok(NULL, " ");
+        int type = atoi(tok);
+        if(type == 0) data[index].type = NORMAL;
+        else if (type == 1) data[index].type = DISABLE;
+        tok = strtok(NULL, " ");
+        tok = strtok(NULL, " ");
         user_info->data_time[index] = atoi(tok);
         tok = strtok(NULL, " ");
         tok = strtok(NULL, " ");
-        data[index].first = atoi(tok);
+        data[index].start = atoi(tok);
         tok = strtok(NULL, " ");
         tok = strtok(NULL, " ");
-        data[index].des = atoi(tok);
+        data[index].destination = atoi(tok);
         tok = strtok(NULL, " ");
         tok = strtok(NULL, " ");
-        if ((data[index].des - data[index].first) > 0)
-            data[index].dir = UP;
+        if ((data[index].destination - data[index].start) > 0)
+            data[index].direction = UP;
         else
-            data[index].dir = DOWN;
+            data[index].direction = DOWN;
         data[index].state = WAIT;
         memset(buffer, 0, sizeof(buffer));
         index++;
@@ -113,7 +118,7 @@ int read_txt(Demand *data, int index, char data_name[])
     return index;
 }
 
-void parentfunc(Demand *data, int data_max)
+void parentfunc(Requirement *data, int data_max)
 {
     int old_count = -2, kill2control, i;
     while(1)
@@ -128,20 +133,20 @@ void parentfunc(Demand *data, int data_max)
                 if (user_info->data_time[i] == old_count)
                 {
                     int i_bitmap = 0;
-                    while ((shm_bitmap->I & (1 << i_bitmap)) && i_bitmap < 32)
+                    while ((shm_bitmap->one & (1 << i_bitmap)) && i_bitmap < 32)
                     {
                         i_bitmap++;
                     }
 
                     if (i_bitmap < 32)
                     {
-                        shm_bitmap->I |= 1 << i_bitmap;
+                        shm_bitmap->one |= 1 << i_bitmap;
                    
-                        shm_data[i]->first = data[i].first;
-                        shm_data[i]->des = data[i].des;
-                        shm_data[i]->dir = data[i].dir;
+                        shm_data[i]->start = data[i].start;
+                        shm_data[i]->destination = data[i].destination;
+                        shm_data[i]->direction = data[i].direction;
                         shm_data[i]->state = data[i].state;
-                        shm_bitmap->I2O |= 1 << i_bitmap; 
+                        shm_bitmap->one_to_zero |= 1 << i_bitmap; 
                         kill2control = 1; /* signal to controller , controller need to renew*/
                     }
                 }
@@ -171,27 +176,27 @@ void childfunc()
         i = 0;
         while (i < 32)
         {
-            if (shm_bitmap->O2I & 1 << i)
+            if (shm_bitmap->zero_to_one & 1 << i)
             {
                 if (shm_data[i]->state == ARRIVED)
                 {
-                    shm_bitmap->O2I ^= 1 << i;
-                    shm_bitmap->I ^= 1 << i;
+                    shm_bitmap->zero_to_one ^= 1 << i;
+                    shm_bitmap->one ^= 1 << i;
                     printf("[time : %d] Passenger: %s\n", *timer_count, user_info->name[i]);
                     printf("            Service: Leave the Elevator\n");
-                    printf("            Floor: %hu\n", shm_data[i]->des);
+                    printf("            Floor: %hu\n", shm_data[i]->destination);
                     printf("-----------------------------------------\n");
-                    // printf("[time : %d] %s from location %hu to destination %hu finish !\n", *timer_count, user_info->name[i], shm_data[i]->first, shm_data[i]->des);
-                    // fprintf(file1, "[time : %d] %s from location %hu to destination %hu finish !\n", *timer_count, user_info->name[i], shm_data[i]->first, shm_data[i]->des);
-                    fprintf(file1, "[time : %d] Passenger: %s, Need: From floor %hu to floor %hu , State: Finish !\n", *timer_count, user_info->name[i], shm_data[i]->first, shm_data[i]->des);
+                    // printf("[time : %d] %s from location %hu to destination %hu finish !\n", *timer_count, user_info->name[i], shm_data[i]->start, shm_data[i]->destination);
+                    // fprintf(file1, "[time : %d] %s from location %hu to destination %hu finish !\n", *timer_count, user_info->name[i], shm_data[i]->start, shm_data[i]->destination);
+                    fprintf(file1, "[time : %d] Passenger: %s, Need: From floor %hu to floor %hu , State: Finish !\n", *timer_count, user_info->name[i], shm_data[i]->start, shm_data[i]->destination);
                 }
-                else if (shm_data[i]->state == INCAR)
+                else if (shm_data[i]->state == INSIDE)
                 {
-                    shm_bitmap->O2I ^= 1 << i;
+                    shm_bitmap->zero_to_one ^= 1 << i;
                     // printf("[time : %d] %s in elevator\n", *timer_count, user_info->name[i]);
                     printf("[time : %d]  Passenger: %s\n", *timer_count, user_info->name[i]);
                     printf("            Service: Enter the Elevator\n");
-                    printf("            Floor: %hu\n", shm_data[i]->first);
+                    printf("            Floor: %hu\n", shm_data[i]->start);
                     printf("-----------------------------------------\n");
                 }
             }
@@ -205,15 +210,15 @@ int main(int argc, char *argv[])
 {
     int i, data_index = 0;
     signal(SIGINT, signalHandler);
-    controller_pid = atoi(argv[1]);
-    char data_name[20];
-    strcpy(data_name, argv[2]);
     if (argc != 3)
     {
         printf("./IO [pid] [data.txt]\n");
         return -1;
     }
-    Demand data[64];
+    controller_pid = atoi(argv[1]);
+    char data_name[20];
+    strcpy(data_name, argv[2]);
+    Requirement data[64];
     /* create share memory */
     key_t key_data[32], key_bitmap = 1111, key_timer = 4444, key_userinfo = 5555;
 
@@ -230,8 +235,8 @@ int main(int argc, char *argv[])
     for (i=1; i <= 32; i++)
     {
         key_data[i-1] = i;
-        shmid[i-1] = shmget(key_data[i-1], sizeof(Demand),IPC_CREAT | 0666);
-        shm_data[i-1] = (Demand*)shmat(shmid[i-1], NULL, 0);
+        shmid[i-1] = shmget(key_data[i-1], sizeof(Requirement),IPC_CREAT | 0666);
+        shm_data[i-1] = (Requirement*)shmat(shmid[i-1], NULL, 0);
     }
 
     Bitmap_id = shmget(key_bitmap, sizeof(bitmap),IPC_CREAT | 0666);

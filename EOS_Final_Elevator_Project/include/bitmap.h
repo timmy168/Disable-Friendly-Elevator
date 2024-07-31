@@ -1,5 +1,8 @@
+/*Implement the bit map operation*/
+
 #ifndef BITMAP
 #define BITMAP
+
 #include <stdlib.h>
 
 void find_bitmap_nearest_0_index(unsigned int bitmap, int *nearest_index);
